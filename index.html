@@ -1,94 +1,168 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Panfleto AR</title>
-<script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
-<style>
-html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000;font-family:Arial,sans-serif}
-#status{position:fixed;z-index:20;top:18px;left:50%;transform:translateX(-50%);width:min(88vw,520px);padding:12px 16px;border-radius:14px;color:#fff;background:rgba(0,0,0,.72);text-align:center;font-size:15px;pointer-events:none}
-#startButton{position:fixed;z-index:30;left:50%;bottom:28px;transform:translateX(-50%);border:0;border-radius:999px;padding:14px 22px;font-size:16px;font-weight:700;background:#fff;color:#111;box-shadow:0 6px 24px rgba(0,0,0,.35)}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
+  <title>Panfleto AR</title>
+
+  <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+
+  <style>
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: transparent !important;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    /* IMPORTANTE: deixa o canvas 3D transparente
+       para a imagem REAL da câmera aparecer atrás. */
+    a-scene,
+    .a-canvas {
+      background: transparent !important;
+    }
+
+    #status {
+      position: fixed;
+      z-index: 1000;
+      top: max(18px, env(safe-area-inset-top));
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(88vw, 520px);
+      padding: 10px 14px;
+      border-radius: 12px;
+      color: #fff;
+      background: rgba(0,0,0,.58);
+      text-align: center;
+      font-size: 15px;
+      pointer-events: none;
+    }
+
+    #startButton {
+      position: fixed;
+      z-index: 1001;
+      left: 50%;
+      bottom: max(28px, calc(env(safe-area-inset-bottom) + 16px));
+      transform: translateX(-50%);
+      border: 0;
+      border-radius: 999px;
+      padding: 14px 22px;
+      font-size: 16px;
+      font-weight: 700;
+      background: #fff;
+      color: #111;
+      box-shadow: 0 6px 24px rgba(0,0,0,.30);
+    }
+  </style>
 </head>
+
 <body>
-<div id="status">Toque em “Ativar som” e depois aponte a câmera para o panfleto.</div>
+
+<div id="status">Toque em “Ativar som” e aponte a câmera para o panfleto.</div>
 <button id="startButton">🔊 Ativar som</button>
 
 <a-scene
- mindar-image="imageTargetSrc: ./assets/targets.mind; filterMinCF: 0.001; filterBeta: 0.01;"
- color-space="sRGB"
- renderer="colorManagement: true; physicallyCorrectLights: true; antialias: true;"
- vr-mode-ui="enabled: false"
- device-orientation-permission-ui="enabled: false"
- embedded>
+  mindar-image="imageTargetSrc: ./assets/targets.mind; filterMinCF: 0.001; filterBeta: 0.01;"
+  color-space="sRGB"
+  renderer="colorManagement: true; physicallyCorrectLights: true; antialias: true; alpha: true;"
+  vr-mode-ui="enabled: false"
+  device-orientation-permission-ui="enabled: false"
+  embedded>
 
- <a-assets timeout="30000">
-  <video id="arVideo" src="./assets/video.mp4" preload="auto" loop muted playsinline webkit-playsinline crossorigin="anonymous"></video>
- </a-assets>
+  <a-assets timeout="30000">
+    <video
+      id="arVideo"
+      src="./assets/video.mp4"
+      preload="auto"
+      loop
+      muted
+      playsinline
+      webkit-playsinline
+      crossorigin="anonymous">
+    </video>
+  </a-assets>
 
- <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+  <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
- <a-entity id="target" mindar-image-target="targetIndex: 0">
-  <a-video id="videoPlane" src="#arVideo" position="0 0 0.01" width="1" height="1" material="shader: flat;"></a-video>
- </a-entity>
+  <a-entity id="target" mindar-image-target="targetIndex: 0">
+    <a-video
+      id="videoPlane"
+      src="#arVideo"
+      position="0 0 0.01"
+      width="1"
+      height="1"
+      material="shader: flat; transparent: true;">
+    </a-video>
+  </a-entity>
+
 </a-scene>
 
 <script>
-window.addEventListener("DOMContentLoaded",()=>{
- const video=document.querySelector("#arVideo");
- const plane=document.querySelector("#videoPlane");
- const target=document.querySelector("#target");
- const button=document.querySelector("#startButton");
- const status=document.querySelector("#status");
- let audioUnlocked=false;
- let targetVisible=false;
+window.addEventListener("DOMContentLoaded", () => {
+  const video = document.querySelector("#arVideo");
+  const plane = document.querySelector("#videoPlane");
+  const target = document.querySelector("#target");
+  const button = document.querySelector("#startButton");
+  const status = document.querySelector("#status");
 
- video.addEventListener("loadedmetadata",()=>{
-   if(video.videoWidth && video.videoHeight){
-     plane.setAttribute("height", video.videoHeight/video.videoWidth);
-   }
- });
+  let audioUnlocked = false;
+  let targetVisible = false;
 
- video.muted=true;
+  video.addEventListener("loadedmetadata", () => {
+    if (video.videoWidth && video.videoHeight) {
+      plane.setAttribute("height", video.videoHeight / video.videoWidth);
+    }
+  });
 
- button.addEventListener("click",async()=>{
-   audioUnlocked=true;
-   video.muted=false;
-   try{
-     await video.play();
-     if(!targetVisible){
-       video.pause();
-       video.currentTime=0;
-     }
-     button.textContent="🔊 Som ativado";
-     status.textContent="Agora aponte a câmera para o panfleto.";
-   }catch(e){
-     status.textContent="Toque novamente em “Ativar som”.";
-   }
- });
+  video.muted = true;
 
- target.addEventListener("targetFound",async()=>{
-   targetVisible=true;
-   if(!audioUnlocked){
-     status.textContent="Panfleto encontrado. Toque em “Ativar som”.";
-     return;
-   }
-   status.textContent="Panfleto encontrado.";
-   try{
-     video.currentTime=0;
-     await video.play();
-   }catch(e){}
- });
+  button.addEventListener("click", async () => {
+    audioUnlocked = true;
+    video.muted = false;
 
- target.addEventListener("targetLost",()=>{
-   targetVisible=false;
-   video.pause();
-   video.currentTime=0;
-   status.textContent="Aponte novamente a câmera para o panfleto.";
- });
+    try {
+      await video.play();
+
+      if (!targetVisible) {
+        video.pause();
+        video.currentTime = 0;
+      }
+
+      button.textContent = "🔊 Som ativado";
+      status.textContent = "Agora aponte a câmera para o panfleto.";
+    } catch (e) {
+      status.textContent = "Toque novamente em “Ativar som”.";
+    }
+  });
+
+  target.addEventListener("targetFound", async () => {
+    targetVisible = true;
+
+    if (!audioUnlocked) {
+      status.textContent = "Panfleto encontrado. Toque em “Ativar som”.";
+      return;
+    }
+
+    status.textContent = "Panfleto encontrado.";
+
+    try {
+      video.currentTime = 0;
+      await video.play();
+    } catch (e) {}
+  });
+
+  target.addEventListener("targetLost", () => {
+    targetVisible = false;
+    video.pause();
+    video.currentTime = 0;
+    status.textContent = "Aponte novamente a câmera para o panfleto.";
+  });
 });
 </script>
+
 </body>
 </html>
