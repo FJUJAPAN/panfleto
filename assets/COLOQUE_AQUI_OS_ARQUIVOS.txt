@@ -1,2 +1,0 @@
-targets.mind
-video.mp4
